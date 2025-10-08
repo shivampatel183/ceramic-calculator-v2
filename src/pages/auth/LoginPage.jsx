@@ -21,9 +21,6 @@ export default function LoginPage() {
 
     if (error) {
       setError(error.message);
-    } else {
-      // The onAuthStateChange in AuthContext will handle the redirect
-      // You can add a navigate('/') here as a fallback if needed
     }
     setLoading(false);
   };
