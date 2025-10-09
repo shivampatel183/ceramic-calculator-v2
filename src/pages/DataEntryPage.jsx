@@ -71,7 +71,16 @@ const fieldLabels = {
 };
 
 export default function DataEntryPage() {
-  const { user } = useAuth();
+  const auth = useAuth();
+  if (!auth) {
+    // Auth context not ready or provider not available yet — show a loader to avoid a crash
+    return (
+      <div className="flex h-screen items-center justify-center">
+        Loading authentication...
+      </div>
+    );
+  }
+  const { user } = auth;
   const [formData, setFormData] = useState({
     date: new Date().toISOString().split("T")[0],
     size: "",

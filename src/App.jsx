@@ -18,6 +18,27 @@ const NotFoundPage = () => (
   </div>
 );
 
+// Redirects unknown routes to login when unauthenticated, or to the
+// appropriate home route when authenticated. Shows a loading state while
+// auth is initializing.
+const NotFoundRedirect = () => {
+  const { user, loading } = useAuth();
+  if (loading) {
+    return (
+      <div className="flex h-screen items-center justify-center">
+        Loading...
+      </div>
+    );
+  }
+
+  return (
+    <Navigate
+      to={!user ? "/login" : user.role === "admin" ? "/home" : "/data-entry"}
+      replace
+    />
+  );
+};
+
 // A component to protect routes inside a layout
 const ProtectedRoute = ({ children }) => {
   const { user, loading } = useAuth();
@@ -96,8 +117,8 @@ export default function App() {
         }
       />
 
-      {/* Fallback for any other route */}
-      <Route path="*" element={<NotFoundPage />} />
+      {/* Fallback for any other route: redirect based on auth state */}
+      <Route path="*" element={<NotFoundRedirect />} />
     </Routes>
   );
 }

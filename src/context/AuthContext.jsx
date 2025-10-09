@@ -1,4 +1,5 @@
 // src/context/AuthContext.jsx
+/* eslint-disable react-refresh/only-export-components */
 import { createContext, useState, useEffect, useContext } from "react";
 import { supabase } from "../supabaseClient";
 
@@ -10,63 +11,130 @@ export const AuthProvider = ({ children }) => {
 
   useEffect(() => {
     const getSessionAndProfile = async () => {
-      // First, get the session information
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
+      try {
+        const {
+          data: { session },
+        } = await supabase.auth.getSession();
 
-      if (session) {
-        // If a session exists, fetch the user's profile from the 'profiles' table
-        const { data: profile } = await supabase
-          .from("profiles")
-          .select("role, full_name, department, factory_id") // Fetch all necessary details
-          .eq("id", session.user.id)
-          .single();
+        if (session) {
+          // Try to fetch profile; if it doesn't exist, fall back to session.user
+          let profile = null;
+          try {
+            const { data, error } = await supabase
+              .from("profiles")
+              .select("role, full_name, factory_id")
+              .eq("id", session.user.id)
+              .single();
+            if (!error) profile = data;
+            else console.warn("No profile found for user:", error);
+          } catch (err) {
+            console.error("Error fetching profile:", err);
+          }
 
-        // Combine the auth user object with their profile details
-        setUser({
-          ...session.user,
-          ...profile,
-          ceramic_name: profile?.full_name,
-        });
+          // If profile missing, try to infer role from auth user metadata
+          let inferredRole = session.user?.user_metadata?.role ?? null;
+          let inferredFullName = session.user?.user_metadata?.full_name ?? null;
+          if (!inferredRole) {
+            try {
+              const { data: userData } = await supabase.auth.getUser();
+              const authUser = userData?.user ?? null;
+              inferredRole =
+                authUser?.user_metadata?.role ??
+                authUser?.app_metadata?.role ??
+                inferredRole;
+              inferredFullName =
+                authUser?.user_metadata?.full_name ?? inferredFullName;
+            } catch (err) {
+              // ignore; we'll fallback to 'user' below
+            }
+          }
+
+          const userObj = profile
+            ? { ...session.user, ...profile, ceramic_name: profile.full_name }
+            : {
+                ...session.user,
+                role: inferredRole ?? "user",
+                ceramic_name: inferredFullName ?? session.user?.email,
+              };
+
+          setUser(userObj);
+        }
+      } catch (error) {
+        console.error("Error fetching session and profile:", error);
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
     };
 
-    // Run the function on initial load
     getSessionAndProfile();
 
-    // Set up a listener for authentication state changes (login, logout)
     const { data: listener } = supabase.auth.onAuthStateChange(
       async (_event, session) => {
         if (session) {
-          // If the user logs in, fetch their profile again
-          const { data: profile } = await supabase
-            .from("profiles")
-            .select("role, full_name, department, factory_id")
-            .eq("id", session.user.id)
-            .single();
+          // Safe fetch profile as above
+          let profile = null;
+          try {
+            const { data, error } = await supabase
+              .from("profiles")
+              .select("role, full_name, factory_id")
+              .eq("id", session.user.id)
+              .single();
+            if (!error) profile = data;
+            else console.warn("No profile found for user (listener):", error);
+          } catch (err) {
+            // Improve error logging so it's easier to diagnose 4xx/5xx responses
+            try {
+              console.error(
+                "Error fetching profile (listener):",
+                err?.message ?? err,
+                err?.status ?? null
+              );
+            } catch {
+              console.error("Error fetching profile (listener):", err);
+            }
+          }
 
-          setUser({
-            ...session.user,
-            ...profile,
-            ceramic_name: profile?.full_name,
-          });
+          // If profile is missing, try to infer role from the auth user metadata
+          let inferredRole = session.user?.user_metadata?.role ?? null;
+          let inferredFullName = session.user?.user_metadata?.full_name ?? null;
+          if (!inferredRole) {
+            try {
+              const { data: userData } = await supabase.auth.getUser();
+              const authUser = userData?.user ?? null;
+              inferredRole =
+                authUser?.user_metadata?.role ??
+                authUser?.app_metadata?.role ??
+                inferredRole;
+              inferredFullName =
+                authUser?.user_metadata?.full_name ?? inferredFullName;
+            } catch (err) {
+              // ignore; we'll fallback to 'user' below
+            }
+          }
+
+          const userObj = profile
+            ? { ...session.user, ...profile, ceramic_name: profile.full_name }
+            : {
+                ...session.user,
+                role: inferredRole ?? "user",
+                ceramic_name: inferredFullName ?? session.user?.email,
+              };
+
+          setUser(userObj);
         } else {
-          // If the user logs out, clear the user state
           setUser(null);
         }
         setLoading(false);
       }
     );
 
-    // Cleanup the listener when the component unmounts
     return () => {
-      listener?.subscription.unsubscribe();
+      try {
+        listener?.subscription?.unsubscribe();
+      } catch {}
     };
   }, []);
 
-  // Provide the user, signOut function, and loading state to the rest of the app
   const value = {
     user,
     signOut: () => supabase.auth.signOut(),
@@ -80,7 +148,6 @@ export const AuthProvider = ({ children }) => {
   );
 };
 
-// Create a custom hook to easily access the auth context
 export const useAuth = () => {
   return useContext(AuthContext);
 };

@@ -53,15 +53,16 @@ export default function ManageUsersPage() {
     const fetchUsers = async () => {
       setLoading(true);
       // We can query the 'profiles' table directly thanks to RLS
-      const { data, error } = await supabase
+      const { data: profiles, error } = await supabase
         .from("profiles")
         .select("id, full_name, role, department")
         .neq("id", user.id); // Exclude the admin themselves
 
       if (error) {
         console.error("Error fetching users:", error);
+        setUsers([]);
       } else {
-        setUsers(data);
+        setUsers(profiles || []);
       }
       setLoading(false);
     };
@@ -87,7 +88,7 @@ export default function ManageUsersPage() {
     setFormMessage({ type: "", text: "" });
 
     try {
-      const { data, error } = await supabase.functions.invoke("invite-user", {
+      const { error } = await supabase.functions.invoke("invite-user", {
         body: {
           invitee_email: inviteEmail,
           full_name: fullName,

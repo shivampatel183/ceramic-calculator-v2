@@ -19,7 +19,7 @@ export default function RegisterPage() {
 
     // This is the only call we need now.
     // The new database trigger handles creating the factory and the admin profile automatically.
-    const { data, error: signUpError } = await supabase.auth.signUp({
+    const { error: signUpError } = await supabase.auth.signUp({
       email,
       password,
       options: {

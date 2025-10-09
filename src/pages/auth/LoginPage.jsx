@@ -21,6 +21,9 @@ export default function LoginPage() {
 
     if (error) {
       setError(error.message);
+    } else {
+      // Redirect to root which will further redirect based on role
+      navigate("/");
     }
     setLoading(false);
   };
