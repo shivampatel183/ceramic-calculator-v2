@@ -9,20 +9,25 @@ import DepartmentLayout from "./layouts/DepartmentLayout";
 import LoginPage from "./pages/auth/LoginPage";
 import RegisterPage from "./pages/auth/RegisterPage";
 import HomePage from "./pages/HomePage";
-// import AnalysisPage from "./pages/AnalysisPage"; // We will create this
 import DataEntryPage from "./pages/DataEntryPage";
-// import DataTablePage from "./pages/DataTablePage"; // We will create this
-// import ProfilePage from "./pages/ProfilePage"; // We will create this
+import ManageUsersPage from "./pages/ManageUsersPage";
+
 const NotFoundPage = () => (
   <div className="flex h-screen items-center justify-center">
     404 - Page Not Found
   </div>
 );
 
-// A component to protect routes
+// A component to protect routes inside a layout
 const ProtectedRoute = ({ children }) => {
   const { user, loading } = useAuth();
-  if (loading) return <div>Loading...</div>; // Or a spinner component
+  if (loading) {
+    return (
+      <div className="flex h-screen items-center justify-center">
+        Loading...
+      </div>
+    );
+  }
   return user ? children : <Navigate to="/login" />;
 };
 
@@ -37,6 +42,8 @@ export default function App() {
     );
   }
 
+  // NOTE: There is NO <Router> component here.
+  // It is correctly placed in your main.jsx file.
   return (
     <Routes>
       <Route
@@ -58,15 +65,13 @@ export default function App() {
           }
         >
           <Route path="/home" element={<HomePage />} />
-          {/* <Route path="/analysis" element={<AnalysisPage />} /> */}
           <Route path="/data-entry" element={<DataEntryPage />} />
-          {/* <Route path="/data-table" element={<DataTablePage />} />
-          <Route path="/profile" element={<ProfilePage />} /> */}
+          <Route path="/manage-users" element={<ManageUsersPage />} />
         </Route>
       )}
 
       {/* Department User Routes */}
-      {user?.role === "department_user" && (
+      {user?.role === "user" && (
         <Route
           element={
             <ProtectedRoute>
@@ -75,11 +80,11 @@ export default function App() {
           }
         >
           <Route path="/data-entry" element={<DataEntryPage />} />
-          <Route path="/data-table" element={<DataTablePage />} />
+          {/* Add other user routes here, e.g., /data-table */}
         </Route>
       )}
 
-      {/* Redirect logic */}
+      {/* Redirect logic for the root path */}
       <Route
         path="/"
         element={

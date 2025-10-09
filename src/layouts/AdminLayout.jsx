@@ -1,6 +1,15 @@
 // src/layouts/AdminLayout.jsx
 import { NavLink, Outlet } from "react-router-dom";
-import { Home, BarChart3, Database, User, LogOut, Edit } from "lucide-react";
+// Add Users icon
+import {
+  Home,
+  BarChart3,
+  Database,
+  User,
+  LogOut,
+  Edit,
+  Users,
+} from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 
 export default function AdminLayout() {
@@ -12,6 +21,7 @@ export default function AdminLayout() {
           Admin Panel
         </h2>
         <nav className="flex flex-col gap-3">
+          {/* ... other NavLinks ... */}
           <NavLink
             to="/home"
             className={({ isActive }) =>
@@ -23,38 +33,16 @@ export default function AdminLayout() {
             {" "}
             <Home size={18} /> Home{" "}
           </NavLink>
+          {/* ... */}
           <NavLink
-            to="/analysis"
+            to="/manage-users" // Add this link
             className={({ isActive }) =>
               `flex items-center gap-3 p-2 rounded-lg ${
                 isActive ? "bg-blue-100 text-blue-700" : "hover:bg-gray-100"
               }`
             }
           >
-            {" "}
-            <BarChart3 size={18} /> Analysis{" "}
-          </NavLink>
-          <NavLink
-            to="/data-entry"
-            className={({ isActive }) =>
-              `flex items-center gap-3 p-2 rounded-lg ${
-                isActive ? "bg-blue-100 text-blue-700" : "hover:bg-gray-100"
-              }`
-            }
-          >
-            {" "}
-            <Edit size={18} /> Entry{" "}
-          </NavLink>
-          <NavLink
-            to="/data-table"
-            className={({ isActive }) =>
-              `flex items-center gap-3 p-2 rounded-lg ${
-                isActive ? "bg-blue-100 text-blue-700" : "hover:bg-gray-100"
-              }`
-            }
-          >
-            {" "}
-            <Database size={18} /> Data{" "}
+            <Users size={18} /> Manage Users
           </NavLink>
           <NavLink
             to="/profile"
@@ -64,16 +52,10 @@ export default function AdminLayout() {
               }`
             }
           >
-            {" "}
-            <User size={18} /> Profile{" "}
+            <User size={18} /> Profile
           </NavLink>
         </nav>
-        <button
-          onClick={signOut}
-          className="mt-auto flex items-center justify-center gap-2 bg-red-500 hover:bg-red-600 text-white py-2 rounded-lg"
-        >
-          <LogOut size={16} /> Logout
-        </button>
+        {/* ... */}
       </div>
       <main className="flex-1 bg-gray-50 p-8">
         <Outlet />

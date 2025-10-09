@@ -17,36 +17,27 @@ export default function RegisterPage() {
     setMessage("");
     setLoading(true);
 
-    const {
-      data: { user },
-      error,
-    } = await supabase.auth.signUp({
+    // This is the only call we need now.
+    // The new database trigger handles creating the factory and the admin profile automatically.
+    const { data, error: signUpError } = await supabase.auth.signUp({
       email,
       password,
       options: {
         data: {
           ceramic_name: ceramicName,
+          full_name: ceramicName, // Pass name for profile creation
         },
       },
     });
 
-    if (error) {
-      setError(error.message);
-    } else if (user) {
-      // Now update the profiles table
-      const { error: profileError } = await supabase
-        .from("profiles")
-        .update({ ceramic_name: ceramicName, email: email })
-        .eq("id", user.id);
-
-      if (profileError) {
-        setError(profileError.message);
-      } else {
-        setMessage(
-          "Registration successful! Please check your email to confirm your account."
-        );
-      }
+    if (signUpError) {
+      setError(signUpError.message);
+    } else {
+      setMessage(
+        "Registration successful! Please check your email to confirm your account."
+      );
     }
+
     setLoading(false);
   };
 

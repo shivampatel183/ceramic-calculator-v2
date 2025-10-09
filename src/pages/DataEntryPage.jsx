@@ -14,7 +14,6 @@ const departmentFields = {
     "sizing_fire_loss_boxes",
     "spray_dryer_production",
     "coal_units_use",
-    "daily_electricity_units_use",
     "gas_consumption",
   ],
   Packing: ["packing_box", "pre_box", "std_box", "eco_box"],
@@ -49,7 +48,6 @@ const fieldLabels = {
   sizing_fire_loss_boxes: "Sizing Fire Loss Boxes",
   spray_dryer_production: "Spray Dryer Production",
   coal_units_use: "Coal Units Use",
-  daily_electricity_units_use: "Daily Electricity Units Use",
   gas_consumption: "Gas Consumption",
   pre_box: "Pre Box",
   std_box: "Std Box",
@@ -80,11 +78,13 @@ export default function DataEntryPage() {
   });
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
+  const [error, setError] = useState("");
 
+  // Determine which sections to show based on user role or department
   const sectionsToShow =
     user?.role === "admin"
       ? Object.keys(allFields)
-      : ["Core Details", user?.department];
+      : ["Core Details", user?.department].filter(Boolean);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -95,22 +95,34 @@ export default function DataEntryPage() {
     e.preventDefault();
     setLoading(true);
     setMessage("");
+    setError("");
 
-    // TODO: This will be replaced by a single call to a Supabase Edge Function
-    // that handles the transactional insert into multiple tables.
-    // For now, we'll simulate it.
-    console.log("Submitting data:", {
-      ...formData,
-      department: user.department,
+    // Create a copy of the form data to process
+    const submissionData = { ...formData };
+    // Convert empty strings to null for database compatibility
+    for (const key in submissionData) {
+      if (submissionData[key] === "") {
+        submissionData[key] = null;
+      }
+    }
+
+    // Call the RPC function to insert/update the data
+    const { error } = await supabase.rpc("insert_daily_data", {
+      entry_data: submissionData,
     });
 
-    setTimeout(() => {
+    if (error) {
+      setError(`Error: ${error.message}`);
+    } else {
       setMessage("Data submitted successfully!");
-      setLoading(false);
-      // Reset form
-      setFormData({ date: new Date().toISOString().split("T")[0], size: "" });
+      // Reset form, keeping the date
+      setFormData({
+        date: formData.date,
+        size: "",
+      });
       setTimeout(() => setMessage(""), 3000);
-    }, 1000);
+    }
+    setLoading(false);
   };
 
   return (
@@ -120,7 +132,7 @@ export default function DataEntryPage() {
         onSubmit={handleSubmit}
         className="bg-white p-8 rounded-xl shadow-md space-y-8"
       >
-        {sectionsToShow.filter(Boolean).map((sectionName) => (
+        {sectionsToShow.map((sectionName) => (
           <div key={sectionName}>
             <h3 className="text-lg font-semibold text-gray-700 border-b pb-2 mb-6">
               {sectionName}
@@ -137,6 +149,11 @@ export default function DataEntryPage() {
                     value={formData[field] || ""}
                     onChange={handleInputChange}
                     className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                    placeholder={
+                      typeof allFields[sectionName][0] === "number"
+                        ? "0.00"
+                        : ""
+                    }
                     required={field === "date" || field === "size"}
                   />
                 </div>
@@ -155,7 +172,10 @@ export default function DataEntryPage() {
           </button>
         </div>
         {message && (
-          <p className="mt-4 text-center text-green-600">{message}</p>
+          <p className="mt-4 text-center text-sm text-green-600">{message}</p>
+        )}
+        {error && (
+          <p className="mt-4 text-center text-sm text-red-600">{error}</p>
         )}
       </form>
     </div>
