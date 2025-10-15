@@ -12,12 +12,6 @@ import HomePage from "./pages/HomePage";
 import DataEntryPage from "./pages/DataEntryPage";
 import ManageUsersPage from "./pages/ManageUsersPage";
 
-const NotFoundPage = () => (
-  <div className="flex h-screen items-center justify-center">
-    404 - Page Not Found
-  </div>
-);
-
 // Redirects unknown routes to login when unauthenticated, or to the
 // appropriate home route when authenticated. Shows a loading state while
 // auth is initializing.
