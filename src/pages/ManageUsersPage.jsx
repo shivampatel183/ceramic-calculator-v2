@@ -128,6 +128,11 @@ export default function CreateUserForm() {
                 checked={selectedFields.includes(field)}
                 onChange={() => toggleField(field)}
               />
+              <span>{field}</span>
+            </label>
+          ))}
+        </div>
+      </div>
 
       <button
         type="submit"
