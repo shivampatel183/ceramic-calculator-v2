@@ -123,7 +123,12 @@ export default function CreateUserForm() {
               key={field}
               className="flex items-center space-x-2 border p-2 rounded"
             >
-              
+              <input
+                type="checkbox"
+                checked={selectedFields.includes(field)}
+                onChange={() => toggleField(field)}
+              />
+              <span>{field}</span>
             </label>
           ))}
         </div>
